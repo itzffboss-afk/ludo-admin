@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#06090f">
+  <title>Ludo Controller — Admin Console</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <style>
+    :root {
+      --bg: #06090f;
+      --bg-radial: radial-gradient(circle at 50% 0%, #0d192f 0%, #06090f 75%);
+      --surface: #0a0f1d;
+      --surface-card: #0f172a;
+      --surface-elevated: #141f36;
+      --surface-hover: #192744;
+      --border: rgba(255, 255, 255, 0.08);
+      --border-subtle: rgba(255, 255, 255, 0.04);
+      --primary: #38bdf8;
+      --primary-dark: #0284c7;
+      --primary-glow: rgba(56, 189, 248, 0.25);
+      --accent: #818cf8;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --gold: #fbbf24;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --nav-height: 64px;
+      --header-height: 60px;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 22px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+    
+    body {
+      background: var(--bg); background-image: var(--bg-radial); background-attachment: fixed;
+      color: var(--text); font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column;
+      overflow-x: hidden; padding-bottom: calc(var(--nav-height) + 16px + env(safe-area-inset-bottom, 0px));
+      user-select: none;
+    }
+
+    code, pre, .mono { font-family: 'JetBrains Mono', monospace; }
+
+    .app-bar {
+      position: sticky; top: 0; z-index: 50; background: rgba(8, 13, 25, 0.88);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border); height: var(--header-height);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 1.25rem; padding-top: env(safe-area-inset-top, 0px);
+    }
+    .app-brand { display: flex; align-items: center; gap: 0.75rem; }
+    .brand-icon {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: linear-gradient(135deg, #0284c7 0%, #38bdf8 50%, #6366f1 100%);
+      display: flex; align-items: center; justify-content: center; color: #fff;
+      font-size: 1.05rem; box-shadow: 0 4px 14px rgba(56, 189, 248, 0.35);
+    }
+    .brand-title { font-size: 1.05rem; font-weight: 800; letter-spacing: -0.02em; display: flex; align-items: center; gap: 0.45rem; }
+    .brand-badge {
+      font-size: 0.62rem; font-weight: 800; text-transform: uppercase;
+      padding: 0.18rem 0.5rem; border-radius: 999px;
+      background: rgba(56, 189, 248, 0.12); color: var(--primary);
+      border: 1px solid rgba(56, 189, 248, 0.28); letter-spacing: 0.06em;
+    }
+    .live-status-pill {
+      display: flex; align-items: center; gap: 0.35rem; font-size: 0.68rem; font-weight: 700;
+      color: var(--success); background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.25); padding: 0.2rem 0.55rem; border-radius: 999px;
+    }
+    .pulse-dot {
+      width: 6px; height: 6px; border-radius: 50%; background: var(--success);
+      box-shadow: 0 0 8px var(--success); animation: pulseAnim 2s infinite;
+    }
+    @keyframes pulseAnim { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+    
+    .app-bar-actions { display: flex; align-items: center; gap: 0.5rem; }
+    .icon-btn {
+      width: 38px; height: 38px; border-radius: var(--radius-md);
+      background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border);
+      color: var(--text-muted); display: flex; align-items: center; justify-content: center;
+      font-size: 0.95rem; cursor: pointer; transition: all 0.18s ease;
+    }
+    .icon-btn:hover { background: rgba(255, 255, 255, 0.09); color: var(--text); }
+    .icon-btn:active { transform: scale(0.94); }
+
+    .app-content { flex: 1; padding: 1.25rem 1rem; max-width: 900px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; }
+    .screen-view { display: none; opacity: 0; transform: translateY(8px); transition: opacity 0.22s, transform 0.22s; }
+    .screen-view.active { display: block; opacity: 1; transform: translateY(0); }
+
+    .metrics-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.85rem; margin-bottom: 1.5rem; }
+    @media (min-width: 640px) { .metrics-grid { grid-template-columns: repeat(4, 1fr); } }
+    .metric-card {
+      background: linear-gradient(145deg, rgba(15, 23, 42, 0.8) 0%, rgba(10, 15, 29, 0.95) 100%);
+      border: 1px solid var(--border); border-radius: var(--radius-lg);
+      padding: 1.15rem 1.1rem; position: relative; overflow: hidden;
+      box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.4);
+    }
+    .metric-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: var(--card-color, var(--primary)); box-shadow: 0 0 12px var(--card-color, var(--primary));
+    }
+    .metric-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem; }
+    .metric-label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-dim); }
+    .metric-icon { font-size: 1.15rem; color: var(--card-color, var(--primary)); }
+    .metric-value { font-size: 1.85rem; font-weight: 800; color: #fff; font-family: 'JetBrains Mono', monospace; line-height: 1.1; }
+    .metric-sub { font-size: 0.72rem; color: var(--text-dim); margin-top: 0.35rem; }
+
+    .section-title {
+      font-size: 0.82rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--text-muted); margin: 1.5rem 0 0.85rem;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .section-badge { font-size: 0.68rem; font-weight: 700; padding: 0.15rem 0.5rem; background: rgba(255, 255, 255, 0.05); border-radius: 999px; color: var(--text-dim); }
+
+    .action-tiles-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.85rem; margin-bottom: 1.5rem; }
+    @media (min-width: 640px) { .action-tiles-grid { grid-template-columns: repeat(4, 1fr); } }
+    .action-tile {
+      background: linear-gradient(145deg, rgba(15, 23, 42, 0.75) 0%, rgba(10, 15, 29, 0.9) 100%);
+      border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.1rem;
+      cursor: pointer; display: flex; align-items: center; gap: 0.85rem; transition: all 0.2s ease;
+    }
+    .action-tile:active { transform: scale(0.97); }
+    .tile-icon {
+      width: 44px; height: 44px; border-radius: var(--radius-md);
+      background: rgba(56, 189, 248, 0.1); color: var(--primary);
+      display: flex; align-items: center; justify-content: center; font-size: 1.15rem; flex-shrink: 0;
+    }
+    .tile-texts h4 { font-size: 0.88rem; font-weight: 700; margin-bottom: 0.2rem; color: #fff; }
+    .tile-texts p { font-size: 0.72rem; color: var(--text-dim); }
+
+    .search-filter-box { margin-bottom: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem; }
+    .search-input-wrap { position: relative; width: 100%; }
+    .search-input-wrap i { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-dim); pointer-events: none; }
+    .search-input {
+      width: 100%; background: rgba(15, 23, 42, 0.8); border: 1px solid var(--border);
+      border-radius: var(--radius-md); padding: 0.75rem 1rem 0.75rem 2.6rem; color: #fff;
+      font-size: 0.85rem; font-family: inherit; outline: none;
+    }
+    .search-input:focus { border-color: var(--primary); box-shadow: 0 0 14px var(--primary-glow); }
+    .filter-chips { display: flex; gap: 0.45rem; overflow-x: auto; padding-bottom: 0.25rem; scrollbar-width: none; }
+    .filter-chips::-webkit-scrollbar { display: none; }
+    .chip {
+      padding: 0.4rem 0.85rem; border-radius: 999px; font-size: 0.74rem; font-weight: 600;
+      background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border);
+      color: var(--text-muted); cursor: pointer; white-space: nowrap;
+    }
+    .chip.active { background: rgba(56, 189, 248, 0.15); border-color: rgba(56, 189, 248, 0.4); color: var(--primary); }
+
+    .item-card {
+      background: linear-gradient(145deg, rgba(15, 23, 42, 0.85) 0%, rgba(10, 15, 28, 0.95) 100%);
+      border: 1px solid var(--border); border-radius: var(--radius-lg);
+      padding: 1.25rem; margin-bottom: 1rem;
+      box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.4);
+    }
+    .card-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.85rem; gap: 0.75rem; }
+    .card-title-group { display: flex; flex-direction: column; gap: 0.25rem; }
+    .card-title-main { font-size: 0.95rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 0.5rem; }
+    .card-subtitle { font-size: 0.74rem; color: var(--text-dim); }
+
+    .status-pill {
+      font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+      padding: 0.22rem 0.65rem; border-radius: 999px; display: inline-flex; align-items: center; gap: 0.3rem;
+    }
+    .status-active { background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3); color: var(--success); }
+    .status-suspended { background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.3); color: var(--warning); }
+    .status-revoked, .status-deactivated { background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.3); color: var(--danger); }
+
+    .key-badge-box {
+      background: rgba(0, 0, 0, 0.4); border: 1px dashed rgba(56, 189, 248, 0.35);
+      border-radius: var(--radius-md); padding: 0.85rem 1rem; margin: 0.75rem 0;
+      display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; cursor: pointer;
+    }
+    .key-badge-code { font-size: 0.95rem; font-weight: 800; color: var(--primary); word-break: break-all; }
+
+    .card-body-info { display: grid; grid-template-columns: 1fr; gap: 0.5rem; margin-bottom: 0.9rem; font-size: 0.78rem; }
+    @media (min-width: 600px) { .card-body-info { grid-template-columns: repeat(2, 1fr); } }
+    .info-row { display: flex; align-items: center; gap: 0.5rem; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .info-row i { width: 16px; color: var(--text-dim); font-size: 0.82rem; flex-shrink: 0; }
+    .info-row span.val { color: #fff; font-weight: 600; }
+
+    .device-key-banner {
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.08) 0%, rgba(99, 102, 241, 0.08) 100%);
+      border: 1px solid rgba(56, 189, 248, 0.25); border-radius: var(--radius-md);
+      padding: 0.85rem 1rem; margin: 0.75rem 0;
+    }
+    .device-key-banner-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; }
+    .device-key-label { font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--primary); display: flex; align-items: center; gap: 0.35rem; }
+    .device-key-text { font-size: 0.95rem; font-weight: 800; color: #fff; word-break: break-all; }
+    .device-owner-sub { font-size: 0.74rem; color: var(--text-muted); margin-top: 0.35rem; display: flex; align-items: center; gap: 0.4rem; }
+
+    .bound-devices-section { background: rgba(0, 0, 0, 0.25); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 0.75rem 0.85rem; margin: 0.75rem 0; }
+    .bound-devices-header { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dim); display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.45rem; }
+    .bound-device-item { display: flex; align-items: center; justify-content: space-between; padding: 0.35rem 0; border-bottom: 1px solid rgba(255, 255, 255, 0.03); font-size: 0.76rem; }
+    .bound-device-item:last-child { border-bottom: none; }
+    .bound-device-left { display: flex; align-items: center; gap: 0.45rem; color: var(--text); font-weight: 600; }
+    .bound-device-right { font-size: 0.68rem; color: var(--text-dim); }
+
+    .card-actions { display: flex; gap: 0.45rem; flex-wrap: wrap; margin-top: 0.85rem; padding-top: 0.85rem; border-top: 1px solid var(--border-subtle); }
+    .btn-action {
+      background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 0.45rem 0.75rem; font-size: 0.74rem; font-weight: 600;
+      color: var(--text-muted); cursor: pointer; display: inline-flex; align-items: center; gap: 0.35rem;
+    }
+    .btn-action:active { transform: scale(0.96); }
+    .btn-action.primary { background: rgba(56, 189, 248, 0.12); border-color: rgba(56, 189, 248, 0.3); color: var(--primary); }
+    .btn-action.success { background: rgba(16, 185, 129, 0.12); border-color: rgba(16, 185, 129, 0.3); color: var(--success); }
+    .btn-action.warning { background: rgba(245, 158, 11, 0.12); border-color: rgba(245, 158, 11, 0.3); color: var(--warning); }
+    .btn-action.danger { background: rgba(239, 68, 68, 0.12); border-color: rgba(239, 68, 68, 0.3); color: var(--danger); }
+
+    .form-group { margin-bottom: 1.1rem; }
+    .form-label { display: block; font-size: 0.74rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dim); margin-bottom: 0.45rem; }
+    .form-input {
+      width: 100%; background: rgba(15, 23, 42, 0.85); border: 1px solid var(--border);
+      border-radius: var(--radius-md); padding: 0.75rem 1rem; min-height: 48px;
+      color: #fff; font-size: 16px; font-family: inherit; outline: none;
+      -webkit-appearance: none; appearance: none;
+    }
+    textarea.form-input { min-height: unset; font-size: 0.88rem; }
+    .form-input::placeholder { color: var(--text-dim); opacity: 0.75; }
+    .form-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.22); }
+
+    .preset-chips { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+    .preset-chip {
+      padding: 0.5rem 0.9rem; border-radius: var(--radius-md); background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border); color: var(--text-muted); font-size: 0.78rem; font-weight: 600;
+      cursor: pointer; display: flex; align-items: center; gap: 0.35rem;
+    }
+    .preset-chip.active { background: rgba(56, 189, 248, 0.15); border-color: rgba(56, 189, 248, 0.4); color: var(--primary); }
+    .preset-chip.gold.active { background: rgba(251, 191, 36, 0.15); border-color: rgba(251, 191, 36, 0.4); color: var(--gold); }
+
+    .btn-generate {
+      width: 100%; min-height: 48px; background: linear-gradient(135deg, #0284c7 0%, #38bdf8 50%, #6366f1 100%);
+      border: none; border-radius: var(--radius-md); padding: 0.85rem 1rem; font-size: 0.92rem; font-weight: 800;
+      color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+      box-shadow: 0 4px 18px rgba(56, 189, 248, 0.35);
+    }
+    .btn-generate:active { transform: scale(0.98); }
+    .btn-generate:disabled { opacity: 0.65; cursor: not-allowed; }
+
+    .generated-result-card {
+      background: rgba(0, 0, 0, 0.45); border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: var(--radius-lg); padding: 1.5rem; margin-top: 1.25rem; text-align: center;
+    }
+    .generated-code-box {
+      background: rgba(15, 23, 42, 0.9); border: 1px dashed var(--primary);
+      border-radius: var(--radius-md); padding: 1rem; font-size: 1.25rem; font-weight: 800;
+      color: #38bdf8; word-break: break-all; margin: 0.75rem 0;
+    }
+
+    .toast-container {
+      position: fixed; top: calc(var(--header-height) + 14px); left: 50%; transform: translateX(-50%);
+      z-index: 150; pointer-events: none; display: flex; flex-direction: column; gap: 0.45rem;
+      width: 90%; max-width: 420px;
+    }
+    .toast {
+      background: rgba(15, 23, 42, 0.96); border: 1px solid var(--border); color: #fff;
+      padding: 0.75rem 1.1rem; border-radius: var(--radius-md); font-size: 0.84rem; font-weight: 600;
+      display: flex; align-items: center; gap: 0.6rem; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    }
+    .toast.success { border-color: var(--success); }
+    .toast.error { border-color: var(--danger); }
+    .toast.info { border-color: var(--primary); }
+
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
+      background: rgba(8, 13, 25, 0.92); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+      border-top: 1px solid var(--border); height: var(--nav-height);
+      display: flex; justify-content: space-around; align-items: center;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    .nav-item {
+      flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 0.25rem; height: 100%; color: var(--text-dim); font-size: 0.68rem; font-weight: 700;
+      text-transform: uppercase; cursor: pointer; position: relative;
+    }
+    .nav-item i { font-size: 1.15rem; }
+    .nav-item.active { color: var(--primary); }
+    .nav-item.active::after {
+      content: ''; position: absolute; top: 0; width: 32px; height: 2.5px; border-radius: 999px;
+      background: var(--primary); box-shadow: 0 0 10px var(--primary);
+    }
+
+    .fab-btn {
+      position: fixed; right: 1.25rem; bottom: calc(var(--nav-height) + 1.25rem + env(safe-area-inset-bottom, 0px));
+      z-index: 45; width: 52px; height: 52px; border-radius: 50%;
+      background: linear-gradient(135deg, #0284c7, #6366f1); color: #fff;
+      display: flex; align-items: center; justify-content: center; font-size: 1.35rem; border: none;
+      box-shadow: 0 8px 24px rgba(2, 132, 199, 0.45); cursor: pointer;
+    }
+    .fab-btn:active { transform: scale(0.92); }
+
+    .bottom-sheet-backdrop {
+      position: fixed; inset: 0; z-index: 100; background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+      display: none; align-items: flex-end; justify-content: center;
+    }
+    .bottom-sheet-backdrop.active { display: flex; }
+    .bottom-sheet {
+      background: #0f172a; border-top: 1px solid var(--border);
+      border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+      width: 100%; max-width: 640px; padding: 1.5rem 1.25rem; max-height: 85vh; overflow-y: auto;
+      box-shadow: 0 -8px 36px rgba(0, 0, 0, 0.6);
+    }
+    .sheet-handle { width: 40px; height: 4px; background: rgba(255, 255, 255, 0.15); border-radius: 999px; margin: 0 auto 1.25rem; }
+
+    @media (max-width: 480px) { .app-content { padding: 0.75rem 0.85rem; } }
+  </style>
+</head>
+<body>
+
+  <header class="app-bar">
+    <div class="app-brand">
+      <div class="brand-icon"><i class="fa-solid fa-gamepad"></i></div>
+      <div class="brand-title">Ludo King <span class="brand-badge">PRO</span></div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 0.65rem;">
+      <div class="live-status-pill"><span class="pulse-dot"></span><span>ONLINE</span></div>
+      <div class="app-bar-actions">
+        <button class="icon-btn" id="btn-refresh" title="Refresh"><i class="fa-solid fa-rotate-right"></i></button>
+        <button class="icon-btn" id="btn-config" title="API Configuration"><i class="fa-solid fa-sliders"></i></button>
+      </div>
+    </div>
+  </header>
+
+  <div class="toast-container" id="toast-container"></div>
+
+  <main class="app-content">
+
+    <div id="screen-overview" class="screen-view active">
+      <div class="metrics-grid">
+        <div class="metric-card" style="--card-color: #38bdf8;">
+          <div class="metric-top"><span class="metric-label">Active Keys</span><i class="fa-solid fa-key metric-icon"></i></div>
+          <div class="metric-value" id="stat-active-keys">-</div>
+          <div class="metric-sub" id="stat-total-keys">Total: -</div>
+        </div>
+        <div class="metric-card" style="--card-color: #10b981;">
+          <div class="metric-top"><span class="metric-label">Live Devices</span><i class="fa-solid fa-mobile-screen metric-icon"></i></div>
+          <div class="metric-value" id="stat-active-devices">-</div>
+          <div class="metric-sub" id="stat-total-devices">Total: -</div>
+        </div>
+        <div class="metric-card" style="--card-color: #f59e0b;">
+          <div class="metric-top"><span class="metric-label">Suspended</span><i class="fa-solid fa-pause metric-icon"></i></div>
+          <div class="metric-value" id="stat-suspended-keys">-</div>
+          <div class="metric-sub">Paused Keys</div>
+        </div>
+        <div class="metric-card" style="--card-color: #ef4444;">
+          <div class="metric-top"><span class="metric-label">Security Traps</span><i class="fa-solid fa-shield-virus metric-icon"></i></div>
+          <div class="metric-value" id="stat-security-events">-</div>
+          <div class="metric-sub">Replay &amp; Attacks</div>
+        </div>
+      </div>
+
+      <div class="section-title"><span>Quick Management</span><span class="section-badge">Instant Actions</span></div>
+      <div class="action-tiles-grid">
+        <div class="action-tile" onclick="switchTab('generate')">
+          <div class="tile-icon"><i class="fa-solid fa-plus"></i></div>
+          <div class="tile-texts"><h4>Generate Key</h4><p>Single client key</p></div>
+        </div>
+        <div class="action-tile" onclick="openBulkSheet()">
+          <div class="tile-icon" style="color:#818cf8;background:rgba(129,140,248,.1);"><i class="fa-solid fa-boxes-stacked"></i></div>
+          <div class="tile-texts"><h4>Bulk Batch</h4><p>Generate batches</p></div>
+        </div>
+        <div class="action-tile" onclick="switchTab('devices')">
+          <div class="tile-icon" style="color:#10b981;background:rgba(16,185,129,.1);"><i class="fa-solid fa-microchip"></i></div>
+          <div class="tile-texts"><h4>Device Slots</h4><p>Hardware binding</p></div>
+        </div>
+        <div class="action-tile" onclick="switchTab('logs')">
+          <div class="tile-icon" style="color:#f59e0b;background:rgba(245,158,11,.1);"><i class="fa-solid fa-list-check"></i></div>
+          <div class="tile-texts"><h4>Audit Trail</h4><p>Security telemetry</p></div>
+        </div>
+      </div>
+
+      <div class="section-title"><span>Security &amp; Verification Stream</span><span class="section-badge">Live Realtime</span></div>
+      <div id="overview-recent-events">
+        <p style="text-align:center;color:var(--text-dim);font-size:.8rem;padding:1.75rem 0;"><i class="fa-solid fa-spinner fa-spin"></i> Loading activity...</p>
+      </div>
+    </div>
+
+    <div id="screen-licenses" class="screen-view">
+      <div class="search-filter-box">
+        <div class="search-input-wrap">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" id="license-search" class="search-input" placeholder="Search customer, key, notes, device ID..." oninput="debounceSearchLicenses()">
+        </div>
+        <div class="filter-chips">
+          <div class="chip active" data-status="" onclick="setLicenseFilter('', this)">All Keys</div>
+          <div class="chip" data-status="active" onclick="setLicenseFilter('active', this)">Active</div>
+          <div class="chip" data-status="suspended" onclick="setLicenseFilter('suspended', this)">Suspended</div>
+          <div class="chip" data-status="revoked" onclick="setLicenseFilter('revoked', this)">Revoked</div>
+        </div>
+      </div>
+      <div id="licenses-container"></div>
+      <div id="licenses-pagination" style="display:flex;justify-content:center;gap:.5rem;margin-top:1.25rem;"></div>
+    </div>
+
+    <div id="screen-generate" class="screen-view">
+      <div class="item-card">
+        <h3 style="font-size:1.05rem;font-weight:800;margin-bottom:1.25rem;display:flex;align-items:center;gap:.5rem;">
+          <i class="fa-solid fa-key" style="color:var(--primary);"></i> Issue Controller License Key
+        </h3>
+        <form id="form-generate-single" onsubmit="handleGenerateSingle(event)">
+          <div class="form-group">
+            <label class="form-label">Customer Name</label>
+            <input type="text" id="gen-customer" class="form-input" placeholder="e.g. VIP Customer" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Feature Tier</label>
+            <div class="preset-chips">
+              <div class="preset-chip gold active" onclick="selectFeatures(63, this)"><i class="fa-solid fa-crown" style="color:#fbbf24;"></i> VIP (63)</div>
+              <div class="preset-chip" onclick="selectFeatures(31, this)"><i class="fa-solid fa-star" style="color:#38bdf8;"></i> Pro (31)</div>
+              <div class="preset-chip" onclick="selectFeatures(1, this)"><i class="fa-solid fa-dice" style="color:#10b981;"></i> Basic (1)</div>
+            </div>
+            <input type="hidden" id="gen-features" value="63">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Duration</label>
+            <div class="preset-chips" id="duration-presets">
+              <div class="preset-chip" onclick="selectDuration(1, this)">1 Day</div>
+              <div class="preset-chip" onclick="selectDuration(7, this)">7 Days</div>
+              <div class="preset-chip active" onclick="selectDuration(30, this)">30 Days</div>
+              <div class="preset-chip" onclick="selectDuration(90, this)">90 Days</div>
+              <div class="preset-chip" onclick="selectDuration(365, this)">1 Year</div>
+              <div class="preset-chip" onclick="selectDuration(3650, this)">Lifetime</div>
+            </div>
+            <div style="margin-top:.5rem;">
+              <input type="number" id="gen-custom-days" class="form-input" placeholder="Or custom days" style="padding:.55rem .85rem;font-size:.8rem;" oninput="onCustomDaysInput(this)">
+            </div>
+            <input type="hidden" id="gen-days" value="30">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Device Slot Limit</label>
+            <div class="preset-chips">
+              <div class="preset-chip active" onclick="selectLimit(1, this)">1 Device</div>
+              <div class="preset-chip" onclick="selectLimit(2, this)">2 Devices</div>
+              <div class="preset-chip" onclick="selectLimit(5, this)">5 Devices</div>
+              <div class="preset-chip" onclick="selectLimit(0, this)">Unlimited (∞)</div>
+            </div>
+            <input type="hidden" id="gen-limit" value="1">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Notes (Optional)</label>
+            <input type="text" id="gen-notes" class="form-input" placeholder="Telegram handle, transaction ref">
+          </div>
+          <div class="form-group" style="background:rgba(99,102,241,.08);border:1px dashed rgba(99,102,241,.3);border-radius:var(--radius-md);padding:.85rem 1rem;">
+            <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer;font-size:.82rem;font-weight:700;color:#a5b4fc;">
+              <input type="checkbox" id="gen-is-admin" onchange="toggleAdminKey(this)">
+              <span><i class="fa-solid fa-crown" style="color:#fbbf24;"></i> Admin Key (Permanent &amp; Unlimited)</span>
+            </label>
+          </div>
+          <button type="submit" class="btn-generate" id="btn-submit-generate">
+            <i class="fa-solid fa-bolt"></i> Generate License Key
+          </button>
+        </form>
+
+        <div id="single-result-box" style="display:none;" class="generated-result-card">
+          <p style="font-size:.75rem;color:var(--text-dim);text-transform:uppercase;font-weight:800;letter-spacing:.06em;">Key Generated</p>
+          <div class="generated-code-box mono" id="result-code-display">----</div>
+          <div style="display:flex;gap:.5rem;justify-content:center;margin-top:.85rem;flex-wrap:wrap;">
+            <button class="btn-action primary" onclick="copyResultKey()"><i class="fa-solid fa-copy"></i> Copy</button>
+            <button class="btn-action success" onclick="copyWhatsAppFormat()"><i class="fa-brands fa-whatsapp"></i> WhatsApp</button>
+            <button class="btn-action" onclick="shareResultKey()"><i class="fa-solid fa-share-nodes"></i> Share</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="screen-devices" class="screen-view">
+      <div class="search-filter-box">
+        <div class="search-input-wrap">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" id="device-search" class="search-input" placeholder="Search phone model, device ID, key, customer..." oninput="debounceSearchDevices()">
+        </div>
+        <div class="filter-chips">
+          <div class="chip active" data-dev-status="" onclick="setDeviceFilter('', this)">All Devices</div>
+          <div class="chip" data-dev-status="active" onclick="setDeviceFilter('active', this)">Active Slots</div>
+          <div class="chip" data-dev-status="deactivated" onclick="setDeviceFilter('deactivated', this)">Released</div>
+        </div>
+      </div>
+      <div id="devices-container"></div>
+      <div id="devices-pagination" style="display:flex;justify-content:center;gap:.5rem;margin-top:1.25rem;"></div>
+    </div>
+
+    <div id="screen-logs" class="screen-view">
+      <div class="section-title"><span>Security &amp; Audit Trail</span><span class="section-badge">Immutable Log</span></div>
+      <div id="logs-container"></div>
+      <div id="logs-pagination" style="display:flex;justify-content:center;gap:.5rem;margin-top:1.25rem;"></div>
+    </div>
+
+  </main>
+
+  <button class="fab-btn" id="fab-create" onclick="switchTab('generate')" style="display:none;"><i class="fa-solid fa-plus"></i></button>
+
+  <nav class="bottom-nav">
+    <div class="nav-item active" onclick="switchTab('overview')" data-nav="overview"><i class="fa-solid fa-chart-pie"></i><span>Overview</span></div>
+    <div class="nav-item" onclick="switchTab('licenses')" data-nav="licenses"><i class="fa-solid fa-key"></i><span>Keys</span></div>
+    <div class="nav-item" onclick="switchTab('generate')" data-nav="generate"><i class="fa-solid fa-square-plus"></i><span>Generate</span></div>
+    <div class="nav-item" onclick="switchTab('devices')" data-nav="devices"><i class="fa-solid fa-mobile-screen"></i><span>Devices</span></div>
+    <div class="nav-item" onclick="switchTab('logs')" data-nav="logs"><i class="fa-solid fa-shield-halved"></i><span>Audit</span></div>
+  </nav>
+
+  <div class="bottom-sheet-backdrop" id="sheet-bulk" onclick="closeSheetOnBackdrop(event,'sheet-bulk')">
+    <div class="bottom-sheet">
+      <div class="sheet-handle"></div>
+      <h3 style="font-size:1.05rem;font-weight:800;margin-bottom:1rem;"><i class="fa-solid fa-boxes-stacked" style="color:var(--accent);"></i> Bulk Generate</h3>
+      <form onsubmit="handleBulkGenerate(event)">
+        <div class="form-group">
+          <label class="form-label">Batch Prefix</label>
+          <input type="text" id="bulk-prefix" class="form-input" value="VIP Reseller" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Feature Tier</label>
+          <div class="preset-chips">
+            <div class="preset-chip gold active" onclick="selectBulkFeatures(63,this)">VIP (63)</div>
+            <div class="preset-chip" onclick="selectBulkFeatures(31,this)">Pro (31)</div>
+            <div class="preset-chip" onclick="selectBulkFeatures(1,this)">Basic (1)</div>
+          </div>
+          <input type="hidden" id="bulk-features" value="63">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Count</label>
+          <div class="preset-chips">
+            <div class="preset-chip active" onclick="selectBulkCount(5,this)">5</div>
+            <div class="preset-chip" onclick="selectBulkCount(10,this)">10</div>
+            <div class="preset-chip" onclick="selectBulkCount(25,this)">25</div>
+            <div class="preset-chip" onclick="selectBulkCount(50,this)">50</div>
+          </div>
+          <input type="hidden" id="bulk-count" value="5">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Days Valid</label>
+          <div class="preset-chips">
+            <div class="preset-chip" onclick="selectBulkDays(7,this)">7 Days</div>
+            <div class="preset-chip active" onclick="selectBulkDays(30,this)">30 Days</div>
+            <div class="preset-chip" onclick="selectBulkDays(90,this)">90 Days</div>
+            <div class="preset-chip" onclick="selectBulkDays(365,this)">1 Year</div>
+          </div>
+          <input type="hidden" id="bulk-days" value="30">
+        </div>
+        <button type="submit" class="btn-generate"><i class="fa-solid fa-bolt"></i> Generate Batch</button>
+      </form>
+      <div id="bulk-result-area" style="display:none;margin-top:1.25rem;">
+        <textarea id="bulk-result-text" class="form-input mono" style="height:140px;font-size:.76rem;" readonly></textarea>
+        <button class="btn-generate" onclick="copyBulkResult()" style="margin-top:.65rem;">Copy All</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-sheet-backdrop" id="sheet-extend" onclick="closeSheetOnBackdrop(event,'sheet-extend')">
+    <div class="bottom-sheet">
+      <div class="sheet-handle"></div>
+      <h3 style="font-size:1.05rem;font-weight:800;margin-bottom:.5rem;"><i class="fa-solid fa-calendar-plus" style="color:var(--primary);"></i> Extend License</h3>
+      <p id="extend-license-info" style="font-size:.78rem;color:var(--text-dim);margin-bottom:1.25rem;" class="mono">-</p>
+      <div class="form-group">
+        <label class="form-label">Extension</label>
+        <div class="preset-chips">
+          <div class="preset-chip" onclick="selectExtendDays(7,this)">+7</div>
+          <div class="preset-chip" onclick="selectExtendDays(15,this)">+15</div>
+          <div class="preset-chip active" onclick="selectExtendDays(30,this)">+30</div>
+          <div class="preset-chip" onclick="selectExtendDays(60,this)">+60</div>
+          <div class="preset-chip" onclick="selectExtendDays(90,this)">+90</div>
+          <div class="preset-chip" onclick="selectExtendDays(365,this)">+365</div>
+        </div>
+        <div style="margin-top:.5rem;">
+          <input type="number" id="extend-custom-days" class="form-input" placeholder="Or custom days" style="padding:.55rem .85rem;font-size:.8rem;" oninput="onCustomExtendDaysInput(this)">
+        </div>
+        <input type="hidden" id="extend-days-val" value="30">
+        <input type="hidden" id="extend-license-id" value="">
+      </div>
+      <button class="btn-generate" onclick="executeExtendLicense()"><i class="fa-solid fa-check"></i> Extend</button>
+    </div>
+  </div>
+
+  <div class="bottom-sheet-backdrop" id="sheet-confirm" onclick="closeSheetOnBackdrop(event,'sheet-confirm')">
+    <div class="bottom-sheet">
+      <div class="sheet-handle"></div>
+      <div style="text-align:center;padding:.75rem 0;">
+        <div id="confirm-icon" style="font-size:2.4rem;color:var(--danger);margin-bottom:.75rem;"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        <h3 id="confirm-title" style="font-size:1.15rem;font-weight:800;margin-bottom:.4rem;">Confirm</h3>
+        <p id="confirm-desc" style="font-size:.82rem;color:var(--text-dim);margin-bottom:1.5rem;">Are you sure?</p>
+        <div style="display:flex;gap:.75rem;">
+          <button class="btn-action" style="flex:1;padding:.85rem;justify-content:center;" onclick="closeSheet('sheet-confirm')">Cancel</button>
+          <button class="btn-action danger" id="confirm-btn-yes" style="flex:1;padding:.85rem;justify-content:center;">Confirm</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-sheet-backdrop" id="sheet-config" onclick="closeSheetOnBackdrop(event,'sheet-config')">
+    <div class="bottom-sheet">
+      <div class="sheet-handle"></div>
+      <h3 style="font-size:1.05rem;font-weight:800;margin-bottom:1rem;"><i class="fa-solid fa-sliders" style="color:var(--primary);"></i> API Configuration</h3>
+      <div class="form-group">
+        <label class="form-label">Worker API Base URL</label>
+        <input type="text" id="input-api-base" class="form-input mono" placeholder="https://ludo-controller-license-api.mdmuajamin.workers.dev">
+        <p style="font-size:.72rem;color:var(--text-dim);margin-top:.35rem;">Leave blank if hosting dashboard on the same worker.</p>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Auth Token (Bearer)</label>
+        <input type="text" id="input-api-token" class="form-input mono" placeholder="Paste admin token if worker requires it">
+        <p style="font-size:.72rem;color:var(--text-dim);margin-top:.35rem;">Saved locally. Sent as <code>Authorization: Bearer &lt;token&gt;</code>.</p>
+      </div>
+      <button class="btn-generate" onclick="saveApiConfig()"><i class="fa-solid fa-floppy-disk"></i> Save &amp; Reload</button>
+    </div>
+  </div>
+
+  <script>
+    const DEFAULT_WORKER_URL = 'https://ludo-controller-license-api.mdmuajamin.workers.dev';
+    let apiBase = localStorage.getItem('ludo_api_base') || (window.location.hostname.includes('workers.dev') ? '' : DEFAULT_WORKER_URL);
+    let token = localStorage.getItem('ludo_admin_token') || '';
+    let currentTab = 'overview';
+    let licenseFilterStatus = '';
+    let deviceFilterStatus = '';
+    let searchDebounce = null;
+    let lastGeneratedKey = '';
+    let lastGeneratedData = null;
+
+    function haptic(ms = 12) { if (navigator.vibrate) { try { navigator.vibrate(ms); } catch(e){} } }
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    }
+
+    function showToast(msg, type = 'info') {
+      const c = document.getElementById('toast-container');
+      const t = document.createElement('div');
+      t.className = `toast ${type}`;
+      const icon = type === 'success' ? 'circle-check' : (type === 'error' ? 'circle-exclamation' : 'circle-info');
+      t.innerHTML = `<i class="fa-solid fa-${icon}"></i> <span>${escapeHtml(msg)}</span>`;
+      c.appendChild(t);
+      setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'all .2s'; setTimeout(() => t.remove(), 200); }, 2600);
+    }
+
+    async function api(path, opts = {}) {
+      opts.headers = opts.headers || {};
+      if (token) opts.headers['Authorization'] = 'Bearer ' + token;
+      if (opts.body && typeof opts.body === 'object') {
+        opts.headers['Content-Type'] = 'application/json';
+        opts.body = JSON.stringify(opts.body);
+      }
+      const url = apiBase ? `${apiBase}${path}` : path;
+      const res = await fetch(url, opts);
+      let data = null;
+      try { data = await res.json(); } catch(e){}
+      if (!res.ok) {
+        if (res.status === 401) showToast('401 Unauthorized — set token in ⚙', 'error');
+        else showToast(`HTTP ${res.status}`, 'error');
+        return data || { success: false, error: `HTTP ${res.status}` };
+      }
+      return data || { success: false, error: 'bad response' };
+    }
+
+    function timeAgo(dateString) {
+      if (!dateString) return 'Never';
+      const d = new Date(dateString);
+      const diffSec = Math.floor((new Date() - d) / 1000);
+      if (diffSec < 60) return 'Just now';
+      const m = Math.floor(diffSec / 60);
+      if (m < 60) return `${m}m ago`;
+      const h = Math.floor(m / 60);
+      if (h < 24) return `${h}h ago`;
+      const days = Math.floor(h / 24);
+      if (days < 30) return `${days}d ago`;
+      return d.toLocaleDateString([], { month:'short', day:'numeric', year:'numeric' });
+    }
+    function formatFullDate(dateString) {
+      if (!dateString) return 'Never';
+      return new Date(dateString).toLocaleString([], { month:'short', day:'numeric', year:'numeric', hour:'2-digit', minute:'2-digit' });
+    }
+
+    function openSheet(id) { haptic(10); document.getElementById(id).classList.add('active'); document.body.style.overflow='hidden'; }
+    function closeSheet(id) { haptic(10); document.getElementById(id).classList.remove('active'); document.body.style.overflow=''; }
+    function closeSheetOnBackdrop(e, id) { if (e.target.id === id) closeSheet(id); }
+
+    function switchTab(tabId) {
+      haptic(10);
+      currentTab = tabId;
+      document.querySelectorAll('.screen-view').forEach(el => el.classList.remove('active'));
+      const t = document.getElementById(`screen-${tabId}`);
+      if (t) t.classList.add('active');
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.nav === tabId));
+      const fab = document.getElementById('fab-create');
+      if (fab) fab.style.display = (tabId === 'licenses') ? 'flex' : 'none';
+      if (tabId === 'overview') loadOverview();
+      if (tabId === 'licenses') loadLicenses();
+      if (tabId === 'devices') loadDevices();
+      if (tabId === 'logs') loadLogs();
+    }
+
+    async function initApp() {
+      document.getElementById('btn-refresh').onclick = () => {
+        haptic(12);
+        const icon = document.querySelector('#btn-refresh i');
+        icon.classList.add('fa-spin');
+        setTimeout(() => icon.classList.remove('fa-spin'), 600);
+        if (currentTab === 'overview') loadOverview();
+        if (currentTab === 'licenses') loadLicenses();
+        if (currentTab === 'devices') loadDevices();
+        if (currentTab === 'logs') loadLogs();
+        showToast('Refreshed', 'info');
+      };
+      document.getElementById('btn-config').onclick = () => {
+        document.getElementById('input-api-base').value = apiBase;
+        document.getElementById('input-api-token').value = token;
+        openSheet('sheet-config');
+      };
+      switchTab('overview');
+    }
+
+    async function loadOverview() {
+      const res = await api('/api/admin/stats');
+      if (res.success && res.stats) {
+        const s = res.stats;
+        document.getElementById('stat-active-keys').innerText = s.active_licenses ?? 0;
+        document.getElementById('stat-total-keys').innerText = `Total: ${s.total_licenses ?? 0}`;
+        document.getElementById('stat-active-devices').innerText = s.active_devices ?? 0;
+        document.getElementById('stat-total-devices').innerText = `Total: ${s.total_devices ?? 0}`;
+        document.getElementById('stat-suspended-keys').innerText = s.suspended_licenses ?? 0;
+        document.getElementById('stat-security-events').innerText = s.total_events ?? 0;
+      }
+      const ev = await api('/api/admin/events?limit=6');
+      const c = document.getElementById('overview-recent-events');
+      if (ev.success && ev.events && ev.events.length > 0) c.innerHTML = ev.events.map(renderEventCard).join('');
+      else c.innerHTML = '<p style="text-align:center;color:var(--text-dim);font-size:.8rem;padding:1.75rem 0;">No events yet.</p>';
+    }
+
+    function renderEventCard(ev) {
+      const ok = ev.outcome === 'success';
+      return `
+        <div class="item-card" style="padding:.85rem 1rem;margin-bottom:.65rem;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div style="display:flex;align-items:center;gap:.6rem;">
+              <i class="fa-solid ${ok?'fa-circle-check':'fa-triangle-exclamation'}" style="color:${ok?'var(--success)':'var(--danger)'};"></i>
+              <span style="font-size:.82rem;font-weight:700;color:#fff;">${escapeHtml(ev.event_type || 'EVENT')}</span>
+            </div>
+            <span style="font-size:.7rem;color:var(--text-dim);">${escapeHtml(timeAgo(ev.created_at))}</span>
+          </div>
+          ${ev.detail ? `<p style="font-size:.74rem;color:var(--text-muted);margin-top:.35rem;">${escapeHtml(ev.detail)}</p>` : ''}
+        </div>`;
+    }
+
+    let licensePage = 1;
+    async function loadLicenses(page = 1) {
+      licensePage = page;
+      const c = document.getElementById('licenses-container');
+      c.innerHTML = '<p style="text-align:center;color:var(--text-dim);font-size:.8rem;padding:2rem 0;"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</p>';
+      const q = document.getElementById('license-search').value.trim();
+      const res = await api(`/api/admin/licenses?page=${page}&limit=12&search=${encodeURIComponent(q)}&status=${licenseFilterStatus}`);
+      if (res.success && res.licenses) {
+        if (res.licenses.length === 0) {
+          c.innerHTML = '<p style="text-align:center;color:var(--text-dim);font-size:.8rem;padding:3rem 0;">No matching keys.</p>';
+          document.getElementById('licenses-pagination').innerHTML = '';
+          return;
+        }
+        c.innerHTML = res.licenses.map(renderLicenseCard).join('');
+        renderPagination('licenses-pagination', res.pagination, p => loadLicenses(p));
+      } else {
+        c.innerHTML = '<p style="text-align:center;color:var(--danger);font-size:.8rem;padding:2rem 0;">Failed to load.</p>';
+      }
+    }
+
+    function renderLicenseCard(l) {
+      const statusClass = l.status === 'active' ? 'status-active' : (l.status === 'suspended' ? 'status-suspended' : 'status-revoked');
+      const isFloating = l.is_floating;
+      const isAdmin = l.is_admin_key;
+      const safeCustomer = escapeHtml(l.customer_name || 'VIP');
+      const safeKeyHint = escapeHtml(l.key_hint || '');
+      const safeIdAttr = (l.id || '').replace(/["'\\]/g, '');
+      const safeKeyAttr = (l.key_hint || '').replace(/["'\\]/g, '');
+      const safeNotes = escapeHtml(l.notes || '');
+
+      let durationText = '';
+      if (isAdmin) durationText = 'Permanent (Admin)';
+      else if (isFloating) durationText = `⚡ Floating (${l.trial_days || 30}d — starts on first run)`;
+      else if (l.expires_at) {
+        const exp = new Date(l.expires_at);
+        const daysLeft = Math.ceil((exp - new Date()) / 86400000);
+        durationText = daysLeft > 0 ? `⏳ ${daysLeft}d left (${exp.toLocaleDateString()})` : 'Expired';
+      }
+
+      let featureBadge = '';
+      if (l.features === 63) featureBadge = '<span class="status-pill" style="background:rgba(251,191,36,.12);color:var(--gold);border:1px solid rgba(251,191,36,.3);"><i class="fa-solid fa-crown"></i> VIP</span>';
+      else if (l.features === 31) featureBadge = '<span class="status-pill" style="background:rgba(56,189,248,.12);color:var(--primary);border:1px solid rgba(56,189,248,.3);"><i class="fa-solid fa-star"></i> Pro</span>';
+      else featureBadge = '<span class="status-pill" style="background:rgba(16,185,129,.12);color:var(--success);border:1px solid rgba(16,185,129,.3);">Basic</span>';
+
+      const activeDevs = l.active_devices_count || 0;
+      const maxDevs = (l.device_limit === 0 || l.device_limit === 255) ? '∞' : (l.device_limit || 1);
+
+      let boundDevicesHtml = '';
+      if (l.devices && l.devices.length > 0) {
+        const devItems = l.devices.map(d => {
+          const active = d.status === 'active';
+          return `<div class="bound-device-item">
+            <div class="bound-device-left">
+              <i class="fa-solid ${active?'fa-mobile-screen':'fa-mobile'}" style="color:${active?'var(--success)':'var(--text-dim)'};"></i>
+              <span>${escapeHtml(d.model || 'Android')}</span>
+              <span class="mono" style="font-size:.68rem;color:var(--text-dim);">(${escapeHtml((d.device_id||'').substring(0,8))}...)</span>
+            </div>
+            <div class="bound-device-right">
+              ${active ? '<span style="color:var(--success);font-weight:700;">● Active</span>' : '<span style="color:var(--text-dim);">Released</span>'}
+              <span style="margin-left:4px;">• ${escapeHtml(d.last_verified_at ? timeAgo(d.last_verified_at) : 'Never')}</span>
+            </div>
+          </div>`;
+        }).join('');
+        boundDevicesHtml = `
+          <div class="bound-devices-section">
+            <div class="bound-devices-header">
+              <span><i class="fa-solid fa-microchip"></i> Devices (${activeDevs}/${maxDevs})</span>
+              ${activeDevs > 0 ? `<button class="btn-action danger" style="padding:.15rem .45rem;font-size:.65rem;" data-id="${safeIdAttr}" onclick="resetLicenseDevicesPrompt(this.dataset.id)"><i class="fa-solid fa-rotate-left"></i> Reset</button>` : ''}
+            </div>${devItems}
+          </div>`;
+      } else {
+        boundDevicesHtml = `<div class="bound-devices-section" style="padding:.6rem .85rem;font-size:.72rem;color:var(--text-dim);">
+          <i class="fa-solid fa-bolt" style="color:var(--accent);"></i> ${isFloating ? 'Floating — waiting for first device' : 'No devices bound yet.'}</div>`;
+      }
+
+      return `
+        <div class="item-card">
+          <div class="card-head">
+            <div class="card-title-group">
+              <div class="card-title-main"><i class="fa-solid fa-user-shield" style="color:var(--primary);"></i><span>${safeCustomer}</span></div>
+              <div class="card-subtitle">${escapeHtml(durationText)}</div>
+            </div>
+            <div style="display:flex;gap:.35rem;flex-wrap:wrap;justify-content:flex-end;">
+              ${featureBadge}
+              <span class="status-pill ${statusClass}">${l.status}</span>
+            </div>
+          </div>
+          <div class="key-badge-box" data-key="${safeKeyAttr}" onclick="copyText(this.dataset.key)">
+            <div style="display:flex;align-items:center;gap:.6rem;overflow:hidden;">
+              <i class="fa-solid fa-key" style="color:var(--primary);"></i>
+              <span class="key-badge-code mono">${safeKeyHint}</span>
+            </div>
+            <button class="btn-action primary" style="flex-shrink:0;padding:.35rem .65rem;"><i class="fa-solid fa-copy"></i></button>
+          </div>
+          ${safeNotes ? `<p style="font-size:.74rem;color:var(--text-dim);margin-bottom:.65rem;"><i class="fa-solid fa-note-sticky"></i> ${safeNotes}</p>` : ''}
+          ${boundDevicesHtml}
+          <div class="card-actions">
+            <button class="btn-action success" data-key="${safeKeyAttr}" data-cust="${safeCustomer.replace(/["'\\]/g,'')}" data-days="${l.trial_days||30}" data-limit="${l.device_limit}" data-features="${l.features}" onclick="copyWhatsAppForCard(this.dataset.key,this.dataset.cust,this.dataset.days,this.dataset.limit,this.dataset.features)"><i class="fa-brands fa-whatsapp"></i> WhatsApp</button>
+            <button class="btn-action" data-id="${safeIdAttr}" data-hint="${safeKeyAttr}" onclick="promptExtendLicense(this.dataset.id,this.dataset.hint)"><i class="fa-solid fa-calendar-plus"></i> Extend</button>
+            ${l.status === 'active' ? `<button class="btn-action warning" data-id="${safeIdAttr}" onclick="suspendLicensePrompt(this.dataset.id)"><i class="fa-solid fa-pause"></i> Suspend</button>` : (l.status === 'suspended' ? `<button class="btn-action success" data-id="${safeIdAttr}" onclick="unsuspendLicensePrompt(this.dataset.id)"><i class="fa-solid fa-play"></i> Resume</button>` : '')}
+            ${l.status !== 'revoked' ? `<button class="btn-action danger" data-id="${safeIdAttr}" onclick="revokeLicensePrompt(this.dataset.id)"><i class="fa-solid fa-ban"></i> Revoke</button>` : ''}
+            <button class="btn-action danger" style="margin-left:auto;" data-id="${safeIdAttr}" onclick="deleteLicensePrompt(this.dataset.id)"><i class="fa-solid fa-trash-can"></i></button>
+          </div>
+        </div>`;
+    }
+
+    function setLicenseFilter(status, el) {
+      haptic(10); licenseFilterStatus = status;
+      document.querySelectorAll('[data-status]').forEach(c => c.classList.remove('active'));
+      el.classList.add('active');
+      loadLicenses(1);
+    }
+    function debounceSearchLicenses() { clearTimeout(searchDebounce); searchDebounce = setTimeout(() => loadLicenses(1), 300); }
+
+    let devicePage = 1;
+    async function loadDevices(page = 1) {
+      devicePage = page;
+      const c = document.getElementById('devices-container');
+      c.innerHTML = '<p style="text-align:center;color:var(--text-dim);font-size:.8rem;padding:2rem 0;"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</p>';
+      const q = document.getElementById('device-search').value.trim();
+      const res = await api(`/api/admin/devices?page=${page}&limit=12&search=${encodeURIComponent(q)}&status=${deviceFilterStatus}`);
+      if (res.success && res.devices) {
+        if (res.devices.length === 0) {
+          c.innerHTML = '<p style="text-align:center;color:var(--text-dim);font-size:.8rem;padding:3rem 0;">No devices.</p>';
+          document.getElementById('devices-pagination').innerHTML = '';
+          return;
+        }
+        c.innerHTML = res.devices.map(renderDeviceCard).join('');
+        renderPagination('devices-pagination', res.pagination, p => loadDevices(p));
+      } else {
+        c.innerHTML = '<p style="text-align:center;color:var(--danger);font-size:.8rem;padding:2rem 0;">Failed to load.</p>';
+      }
+    }
+
+    function renderDeviceCard(dev) {
+      const active = dev.status === 'active';
+      const statusClass = active ? 'status-active' : 'status-deactivated';
+      const statusLabel = active ? '● Active (Bound)' : '○ Released';
+      const safeModel = escapeHtml(dev.model || 'Android');
+      const safeDevId = escapeHtml(dev.device_id || '');
+      const safeDevIdAttr = (dev.device_id || '').replace(/["'\\]/g, '');
+      const safeKeyHint = escapeHtml(dev.key_hint || 'Unassigned');
+      const safeKeyHintAttr = (dev.key_hint || '').replace(/["'\\]/g, '');
+      const safeCustomer = escapeHtml(dev.customer_name || 'Client');
+      const safeAppVer = escapeHtml(dev.app_version || 'v10.6.0.416');
+      const safeIdAttr = (dev.id || '').replace(/["'\\]/g, '');
+
+      let brandIcon = 'fa-mobile-screen-button';
+      const ml = (dev.model || '').toLowerCase();
+      if (ml.includes('pixel')) brandIcon = 'fa-google';
+      else if (ml.includes('samsung') || ml.includes('galaxy')) brandIcon = 'fa-mobile-screen';
+      else if (ml.includes('xiaomi') || ml.includes('redmi')) brandIcon = 'fa-mobile';
+      else if (ml.includes('redroid') || ml.includes('emulator')) brandIcon = 'fa-laptop-code';
+
+      const isOnline = dev.last_verified_at && ((new Date() - new Date(dev.last_verified_at)) < 20*60*1000);
+      const heartbeatBadge = isOnline
+        ? '<span style="color:var(--success);font-weight:700;"><i class="fa-solid fa-circle" style="font-size:.55rem;"></i> Online</span>'
+        : `<span style="color:var(--text-dim);">${escapeHtml(dev.last_verified_at ? timeAgo(dev.last_verified_at) : 'Never')}</span>`;
+
+      return `
+        <div class="item-card">
+          <div class="card-head">
+            <div class="card-title-group">
+              <div class="card-title-main"><i class="fa-solid ${brandIcon}" style="color:var(--primary);"></i><span>${safeModel}</span></div>
+              <div class="card-subtitle">App: <strong style="color:#fff;">${safeAppVer}</strong></div>
+            </div>
+            <span class="status-pill ${statusClass}">${statusLabel}</span>
+          </div>
+          <div class="device-key-banner">
+            <div class="device-key-banner-top">
+              <span class="device-key-label"><i class="fa-solid fa-key"></i> LINKED KEY</span>
+              <button class="btn-action primary" style="padding:.2rem .55rem;font-size:.68rem;" data-hint="${safeKeyHintAttr}" onclick="jumpToLicense(this.dataset.hint)"><i class="fa-solid fa-arrow-up-right-from-square"></i> View</button>
+            </div>
+            <div class="device-key-text mono">${safeKeyHint}</div>
+            <div class="device-owner-sub">
+              <i class="fa-solid fa-user-check" style="color:var(--primary);"></i>
+              <span>Customer: <strong style="color:#fff;">${safeCustomer}</strong></span>
+              ${dev.license_status ? `<span class="status-pill status-${dev.license_status}" style="margin-left:6px;font-size:.68rem;">${escapeHtml(dev.license_status)}</span>` : ''}
+            </div>
+          </div>
+          <div class="card-body-info">
+            <div class="info-row"><i class="fa-solid fa-fingerprint"></i><span>HW ID:</span>
+              <span class="mono val" style="cursor:pointer;color:var(--primary);" data-id="${safeDevIdAttr}" onclick="copyText(this.dataset.id)">${safeDevId.length > 16 ? safeDevId.substring(0,16)+'...' : safeDevId}</span>
+            </div>
+            <div class="info-row"><i class="fa-solid fa-signal"></i><span>Heartbeat:</span><span class="val">${heartbeatBadge}</span></div>
+            <div class="info-row"><i class="fa-solid fa-calendar-check"></i><span>First Bound:</span><span class="val">${escapeHtml(timeAgo(dev.first_activated_at))}</span></div>
+            <div class="info-row"><i class="fa-solid fa-clock-rotate-left"></i><span>Last Seen:</span><span class="val">${escapeHtml(formatFullDate(dev.last_verified_at))}</span></div>
+          </div>
+          <div class="card-actions">
+            <button class="btn-action primary" data-id="${safeDevIdAttr}" onclick="copyText(this.dataset.id)"><i class="fa-solid fa-copy"></i> HW ID</button>
+            <button class="btn-action" data-hint="${safeKeyHintAttr}" onclick="copyText(this.dataset.hint)"><i class="fa-solid fa-key"></i> Key</button>
+            ${active ? `<button class="btn-action danger" style="margin-left:auto;" data-id="${safeIdAttr}" onclick="deactivateDevicePrompt(this.dataset.id)"><i class="fa-solid fa-eject"></i> Release Slot</button>` : ''}
+          </div>
+        </div>`;
+    }
+
+    function jumpToLicense(keyHint) {
+      if (!keyHint || keyHint === 'Unassigned') return;
+      document.getElementById('license-search').value = keyHint;
+      switchTab('licenses');
+      loadLicenses(1);
+    }
+    function setDeviceFilter(status, el) {
+      haptic(10); deviceFilterStatus = status;
+      document.querySelectorAll('[data-dev-status]').forEach(c => c.classList.remove('active'));
+      el.classList.add('active');
+      loadDevices(1);
+    }
+    function debounceSearchDevices() { clearTimeout(searchDebounce); searchDebounce = setTimeout(() => loadDevices(1), 300); }
+
+    let logsPage = 1;
+    async function loadLogs(page = 1) {
+      logsPage = page;
+      const c = document.getElementById('logs-container');
+      c.innerHTML = '<p style="text-align:center;color:var(--text-dim);font-size:.8rem;padding:2rem 0;"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</p>';
+      const res = await api(`/api/admin/events?page=${page}&limit=20`);
+      if (res.success && res.events) {
+        if (res.events.length === 0) {
+          c.innerHTML = '<p style="text-align:center;color:var(--text-dim);font-size:.8rem;padding:3rem 0;">No logs.</p>';
+          document.getElementById('logs-pagination').innerHTML = '';
+          return;
+        }
+        c.innerHTML = res.events.map(renderEventCard).join('');
+        renderPagination('logs-pagination', res.pagination, p => loadLogs(p));
+      } else {
+        c.innerHTML = '<p style="text-align:center;color:var(--danger);font-size:.8rem;padding:2rem 0;">Failed.</p>';
+      }
+    }
+
+    function selectFeatures(f, el) {
+      haptic(10); document.getElementById('gen-features').value = f;
+      el.parentElement.querySelectorAll('.preset-chip').forEach(c => c.classList.remove('active'));
+      el.classList.add('active');
+    }
+    function selectDuration(d, el) {
+      haptic(10); document.getElementById('gen-days').value = d;
+      document.getElementById('gen-custom-days').value = '';
+      el.parentElement.querySelectorAll('.preset-chip').forEach(c => c.classList.remove('active'));
+      el.classList.add('active');
+    }
+    function onCustomDaysInput(input) {
+      const v = parseInt(input.value, 10);
+      if (v > 0) {
+        document.getElementById('gen-days').value = v;
+        document.getElementById('duration-presets').querySelectorAll('.preset-chip').forEach(c => c.classList.remove('active'));
+      }
+    }
+    function selectLimit(l, el) {
+      haptic(10); document.getElementById('gen-limit').value = l;
+      el.parentElement.querySelectorAll('.preset-chip').forEach(c => c.classList.remove('active'));
+      el.classList.add('active');
+    }
+    function toggleAdminKey(cb) {
+      haptic(10);
+      if (cb.checked) {
+        document.getElementById('gen-features').value = 63;
+        document.getElementById('gen-days').value = 3650;
+        document.getElementById('gen-limit').value = 0;
+        showToast('Admin mode: lifetime & unlimited', 'info');
+      } else {
+        document.getElementById('gen-days').value = 30;
+        document.getElementById('gen-limit').value = 1;
+      }
+    }
+
+    async function handleGenerateSingle(e) {
+      e.preventDefault();
+      haptic(15);
+      const customer = document.getElementById('gen-customer').value.trim();
+      const features = parseInt(document.getElementById('gen-features').value, 10);
+      const days = parseInt(document.getElementById('gen-days').value, 10);
+      const limit = parseInt(document.getElementById('gen-limit').value, 10);
+      const notes = document.getElementById('gen-notes').value.trim();
+      const btn = document.getElementById('btn-submit-generate');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generating...';
+      try {
+        const res = await api('/api/admin/licenses', {
+          method: 'POST',
+          body: { customer_name: customer, features, days_valid: days, device_limit: limit, notes }
+        });
+        if (res.success && res.license) {
+          lastGeneratedKey = res.license.key_hint;
+          lastGeneratedData = res.license;
+          document.getElementById('result-code-display').innerText = res.license.key_hint;
+          document.getElementById('single-result-box').style.display = 'block';
+          showToast('Key generated!', 'success');
+          document.getElementById('gen-customer').value = '';
+          document.getElementById('gen-notes').value = '';
+        } else {
+          showToast(res.error || 'Failed', 'error');
+        }
+      } catch (err) { showToast('Network error', 'error'); }
+      finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-bolt"></i> Generate License Key';
+      }
+    }
+
+    function copyResultKey() { if (lastGeneratedKey) { copyText(lastGeneratedKey); } }
+    function copyWhatsAppFormat() {
+      if (!lastGeneratedData && !lastGeneratedKey) return;
+      const key = lastGeneratedKey;
+      const c = (lastGeneratedData && lastGeneratedData.customer_name) || 'Customer';
+      const d = (lastGeneratedData && lastGeneratedData.trial_days) || 30;
+      const l = (lastGeneratedData && lastGeneratedData.device_limit !== undefined) ? lastGeneratedData.device_limit : 1;
+      const f = (lastGeneratedData && lastGeneratedData.features) || 63;
+      copyWhatsAppForCard(key, c, d, l, f);
+    }
+    function copyWhatsAppForCard(key, customer, days, limit, features) {
+      haptic(15);
+      const featName = features == 63 ? 'VIP Special' : (features == 31 ? 'Standard Pro' : 'Basic Dice');
+      const limText = (limit == 0 || limit == 255) ? 'Unlimited Devices' : `${limit} Device(s)`;
+      const durText = (days >= 3650) ? 'Lifetime' : `${days} Days (starts on first activation)`;
+      const msg = `👑 *LUDO KING CONTROLLER PRO* 👑\n\n🔑 *License Key:*\n\`${key}\`\n\n👤 *Customer:* ${customer}\n⏳ *Duration:* ${durText}\n📱 *Device Limit:* ${limText}\n🛡️ *Privileges:* ${featName}\n\n⚡ *Activation:*\n1. Open app\n2. Paste key\n3. Enable controls`;
+      copyText(msg);
+      showToast('WhatsApp template copied!', 'success');
+    }
+    function shareResultKey() {
+      haptic(15);
+      if (lastGeneratedKey && navigator.share) {
+        navigator.share({ title: 'License Key', text: `Your key: ${lastGeneratedKey}` }).catch(() => {});
+      } else copyResultKey();
+    }
+
+    function openBulkSheet() { haptic(12); document.getElementById('bulk-result-area').style.display = 'none'; openSheet('sheet-bulk'); }
+    function selectBulkFeatures(f, el) { haptic(10); document.getElementById('bulk-features').value = f; el.parentElement.querySelectorAll('.preset-chip').forEach(c => c.classList.remove('active')); el.classList.add('active'); }
+    function selectBulkCount(c, el) { haptic(10); document.getElementById('bulk-count').value = c; el.parentElement.querySelectorAll('.preset-chip').forEach(x => x.classList.remove('active')); el.classList.add('active'); }
+    function selectBulkDays(d, el) { haptic(10); document.getElementById('bulk-days').value = d; el.parentElement.querySelectorAll('.preset-chip').forEach(x => x.classList.remove('active')); el.classList.add('active'); }
+
+    async function handleBulkGenerate(e) {
+      e.preventDefault();
+      haptic(15);
+      const prefix = document.getElementById('bulk-prefix').value.trim();
+      const features = parseInt(document.getElementById('bulk-features').value, 10);
+      const count = parseInt(document.getElementById('bulk-count').value, 10);
+      const days = parseInt(document.getElementById('bulk-days').value, 10);
+      const res = await api('/api/admin/licenses/bulk', { method: 'POST', body: { prefix, count, features, days_valid: days } });
+      if (res.success && res.licenses) {
+        document.getElementById('bulk-result-text').value = res.licenses.map(l => l.key_hint).join('\n');
+        document.getElementById('bulk-result-area').style.display = 'block';
+        showToast(`Created ${res.licenses.length} keys!`, 'success');
+      } else showToast(res.error || 'Failed', 'error');
+    }
+    function copyBulkResult() { const t = document.getElementById('bulk-result-text').value; if (t) copyText(t); }
+
+    function promptExtendLicense(id, keyHint) {
+      haptic(10);
+      document.getElementById('extend-license-id').value = id;
+      document.getElementById('extend-license-info').innerText = `Key: ${keyHint}`;
+      openSheet('sheet-extend');
+    }
+    function selectExtendDays(d, el) {
+      haptic(10); document.getElementById('extend-days-val').value = d;
+      document.getElementById('extend-custom-days').value = '';
+      el.parentElement.querySelectorAll('.preset-chip').forEach(c => c.classList.remove('active'));
+      el.classList.add('active');
+    }
+    function onCustomExtendDaysInput(input) {
+      const v = parseInt(input.value, 10);
+      if (v > 0) {
+        document.getElementById('extend-days-val').value = v;
+        document.querySelector('#sheet-extend .preset-chips').querySelectorAll('.preset-chip').forEach(c => c.classList.remove('active'));
+      }
+    }
+    async function executeExtendLicense() {
+      haptic(15);
+      const id = document.getElementById('extend-license-id').value;
+      const days = parseInt(document.getElementById('extend-days-val').value, 10);
+      const res = await api(`/api/admin/licenses/${id}/extend`, { method: 'POST', body: { additional_days: days } });
+      if (res.success) { showToast(`Extended by ${days} days`, 'success'); closeSheet('sheet-extend'); loadLicenses(licensePage); }
+      else showToast(res.error || 'Failed', 'error');
+    }
+
+    function showConfirmDialog(title, desc, onConfirm, icon = 'fa-triangle-exclamation', isDanger = true) {
+      haptic(15);
+      document.getElementById('confirm-title').innerText = title;
+      document.getElementById('confirm-desc').innerText = desc;
+      const iconEl = document.getElementById('confirm-icon');
+      iconEl.innerHTML = `<i class="fa-solid ${icon}"></i>`;
+      iconEl.style.color = isDanger ? 'var(--danger)' : 'var(--warning)';
+      const yesBtn = document.getElementById('confirm-btn-yes');
+      yesBtn.onclick = () => { closeSheet('sheet-confirm'); onConfirm(); };
+      openSheet('sheet-confirm');
+    }
+
+    function suspendLicensePrompt(id) {
+      showConfirmDialog('Suspend', 'Pause access for this key?', async () => {
+        const res = await api(`/api/admin/licenses/${id}/suspend`, { method: 'POST' });
+        if (res.success) { showToast('Suspended', 'info'); loadLicenses(licensePage); } else showToast(res.error || 'Failed', 'error');
+      }, 'fa-pause', false);
+    }
+    function unsuspendLicensePrompt(id) {
+      showConfirmDialog('Resume', 'Restore access?', async () => {
+        const res = await api(`/api/admin/licenses/${id}/unsuspend`, { method: 'POST' });
+        if (res.success) { showToast('Resumed', 'success'); loadLicenses(licensePage); } else showToast(res.error || 'Failed', 'error');
+      }, 'fa-play', false);
+    }
+    function revokeLicensePrompt(id) {
+      showConfirmDialog('Revoke', 'Permanently revoke? Devices will be blocked.', async () => {
+        const res = await api(`/api/admin/licenses/${id}/revoke`, { method: 'POST' });
+        if (res.success) { showToast('Revoked', 'error'); loadLicenses(licensePage); } else showToast(res.error || 'Failed', 'error');
+      }, 'fa-ban', true);
+    }
+    function deleteLicensePrompt(id) {
+      showConfirmDialog('Delete', 'Delete permanently from database?', async () => {
+        const res = await api(`/api/admin/licenses/${id}/delete`, { method: 'POST' });
+        if (res.success) { showToast('Deleted', 'error'); loadLicenses(licensePage); } else showToast(res.error || 'Failed', 'error');
+      }, 'fa-trash-can', true);
+    }
+    function resetLicenseDevicesPrompt(id) {
+      showConfirmDialog('Reset Slots', 'Free all bound devices?', async () => {
+        const res = await api(`/api/admin/licenses/${id}/reset-devices`, { method: 'POST' });
+        if (res.success) { showToast('Slots freed', 'success'); loadLicenses(licensePage); } else showToast(res.error || 'Failed', 'error');
+      }, 'fa-rotate-left', false);
+    }
+    function deactivateDevicePrompt(id) {
+      showConfirmDialog('Release Slot', 'Free this hardware slot?', async () => {
+        const res = await api(`/api/admin/devices/${id}/deactivate`, { method: 'POST' });
+        if (res.success) { showToast('Released', 'success'); loadDevices(devicePage); } else showToast(res.error || 'Failed', 'error');
+      }, 'fa-eject', true);
+    }
+
+    function copyText(str) {
+      haptic(15);
+      if (!str) return;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(str).then(() => showToast('Copied', 'success')).catch(() => fallbackCopyText(str));
+      } else fallbackCopyText(str);
+    }
+    function fallbackCopyText(str) {
+      const el = document.createElement('textarea');
+      el.value = str; el.setAttribute('readonly', ''); el.style.position = 'absolute'; el.style.left = '-9999px';
+      document.body.appendChild(el); el.select();
+      try { document.execCommand('copy'); showToast('Copied', 'success'); } catch (e) { showToast('Failed', 'error'); }
+      document.body.removeChild(el);
+    }
+
+    function saveApiConfig() {
+      const v = document.getElementById('input-api-base').value.trim();
+      const t = document.getElementById('input-api-token').value.trim();
+      if (v) { localStorage.setItem('ludo_api_base', v); apiBase = v; }
+      else { localStorage.removeItem('ludo_api_base'); apiBase = window.location.hostname.includes('workers.dev') ? '' : DEFAULT_WORKER_URL; }
+      if (t) { localStorage.setItem('ludo_admin_token', t); token = t; }
+      else { localStorage.removeItem('ludo_admin_token'); token = ''; }
+      showToast('Saved', 'success');
+      closeSheet('sheet-config');
+      setTimeout(() => location.reload(), 400);
+    }
+
+    function renderPagination(id, pag, onPage) {
+      const c = document.getElementById(id);
+      if (!pag || pag.pages <= 1) { c.innerHTML = ''; return; }
+      c.innerHTML = `
+        <button class="btn-action" ${pag.page <= 1 ? 'disabled style="opacity:.35"' : ''} onclick="${pag.page > 1 ? `(${onPage})(${pag.page - 1})` : ''}"><i class="fa-solid fa-chevron-left"></i></button>
+        <span style="font-size:.76rem;color:var(--text-dim);display:flex;align-items:center;padding:0 .65rem;" class="mono">${pag.page} / ${pag.pages}</span>
+        <button class="btn-action" ${pag.page >= pag.pages ? 'disabled style="opacity:.35"' : ''} onclick="${pag.page < pag.pages ? `(${onPage})(${pag.page + 1})` : ''}"><i class="fa-solid fa-chevron-right"></i></button>
+      `;
+    }
+
+    window.addEventListener('DOMContentLoaded', initApp);
+  </script>
+</body>
+</html>
